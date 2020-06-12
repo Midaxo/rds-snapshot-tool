@@ -71,7 +71,15 @@ def search_tag_created(response):
 
     else: return False
 
+def search_tag_daily(response):
+# Takes a describe_db_snapshots response and searches for a snapshotIntervalType=daily tag
+    try:
+        for tag in response['TagList']:
+            if tag['Key'] == 'snapshotIntervalType' and tag['Value'] == 'daily': return True
 
+    except Exception: return False
+
+    else: return False
 
 def search_tag_shared(response):
 # Takes a describe_db_snapshots response and searches for our shareAndCopy tag

@@ -32,8 +32,6 @@ TIMESTAMP_FORMAT = '%Y-%m-%d-%H-%M'
 logger = logging.getLogger()
 logger.setLevel(LOGLEVEL.upper())
 
-
-
 def lambda_handler(event, context):
     delete_pending = 0
     # Search for all snapshots
@@ -52,7 +50,8 @@ def lambda_handler(event, context):
             response_tags = client.list_tags_for_resource(
                 ResourceName=snapshot_arn)
 
-            if search_tag_copied(response_tags):
+            # Only delete snapshots we copied that are not monthly snapshots
+            if search_tag_copied(response_tags) and search_tag_daily(response_tags):
                 difference = datetime.now() - creation_date
                 days_difference = difference.total_seconds() / 3600 / 24
 

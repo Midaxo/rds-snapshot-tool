@@ -70,11 +70,20 @@ def lambda_handler(event, context):
                 db_instance['DBInstanceIdentifier'], timestamp_format)
 
             try:
+                today = datetime.today()
+                day_number = today.strftime("%-d")
+                if int(day_number) == 1:
+                    snapshot_interval_type = "monthly"
+                else:
+                    snapshot_interval_type = "daily"
+
                 response = client.create_db_snapshot(
                     DBSnapshotIdentifier=snapshot_identifier,
                     DBInstanceIdentifier=db_instance['DBInstanceIdentifier'],
-                    Tags=[{'Key': 'CreatedBy', 'Value': 'Snapshot Tool for RDS'}, {
-                        'Key': 'CreatedOn', 'Value': timestamp_format}, {'Key': 'shareAndCopy', 'Value': 'YES'}]
+                    Tags=[{'Key': 'CreatedBy', 'Value': 'Snapshot Tool for RDS'},
+                        {'Key': 'CreatedOn', 'Value': timestamp_format},
+                        {'Key': 'shareAndCopy', 'Value': 'YES'},
+                        {'Key': 'snapshotIntervalType', 'Value': snapshot_interval_type}]
                 )
             except Exception as e:
                 pending_backups += 1
