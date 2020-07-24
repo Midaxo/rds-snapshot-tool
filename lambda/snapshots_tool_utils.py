@@ -71,7 +71,15 @@ def search_tag_created(response):
 
     else: return False
 
+def search_tag_daily(response):
+# Takes a describe_db_snapshots response and searches for a snapshotIntervalType=daily tag
+    try:
+        for tag in response['TagList']:
+            if tag['Key'] == 'snapshotIntervalType' and tag['Value'] == 'daily': return True
 
+    except Exception: return False
+
+    else: return False
 
 def search_tag_shared(response):
 # Takes a describe_db_snapshots response and searches for our shareAndCopy tag
@@ -100,6 +108,17 @@ def search_tag_copied(response):
         return False
 
     return False
+
+def get_snapshot_interval_type_tag(snapshotProps):
+# Return the snapshotIntervalType tag if found. Fall back to monthly in case not found, for higher protection from deletion
+    try:
+        for tag in snapshotProps['TagList']:
+            if tag['Key'] == 'snapshotIntervalType':
+                return tag['Value']
+    except Exception:
+        return 'monthly'
+
+    return 'monthly'
 
 def get_own_snapshots_no_x_account(pattern, response, REGION):
     # Filters our own snapshots
@@ -314,12 +333,15 @@ def paginate_api_call(client, api_call, objecttype, *args, **kwargs):
     return response
 
 
-def copy_local(snapshot_identifier, snapshot_object):
+def copy_local(snapshot_identifier, snapshot_object, snapshot_interval_type_tag):
     client = boto3.client('rds', region_name=_REGION)
 
     tags = [{
             'Key': 'CopiedBy',
-            'Value': 'Snapshot Tool for RDS'
+            'Value': 'Snapshot Tool for RDS',
+        },{
+            'Key': 'snapshotIntervalType',
+            'Value': snapshot_interval_type_tag
         }]
 
     if snapshot_object['Encrypted']:

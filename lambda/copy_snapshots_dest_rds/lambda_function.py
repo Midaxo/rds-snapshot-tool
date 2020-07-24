@@ -64,7 +64,8 @@ def lambda_handler(event, context):
 
                     # Copy to own account
                     try:
-                        copy_local(shared_identifier, shared_attributes)
+                        snapshot_interval_type_tag = get_snapshot_interval_type_tag(response['DBSnapshots'][shared_identifier])
+                        copy_local(shared_identifier, shared_attributes, snapshot_interval_type_tag)
 
                     except Exception as e:
                         pending_copies += 1

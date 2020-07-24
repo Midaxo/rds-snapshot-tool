@@ -32,8 +32,6 @@ TIMESTAMP_FORMAT = '%Y-%m-%d-%H-%M'
 logger = logging.getLogger()
 logger.setLevel(LOGLEVEL.upper())
 
-
-
 def lambda_handler(event, context):
     delete_pending = 0
     # Search for all snapshots
@@ -52,28 +50,31 @@ def lambda_handler(event, context):
             response_tags = client.list_tags_for_resource(
                 ResourceName=snapshot_arn)
 
+            # Only delete snapshots we copied that are not monthly snapshots
             if search_tag_copied(response_tags):
-                difference = datetime.now() - creation_date
-                days_difference = difference.total_seconds() / 3600 / 24
+                if search_tag_daily(response_tags):
+                    difference = datetime.now() - creation_date
+                    days_difference = difference.total_seconds() / 3600 / 24
 
-                # if we are past RETENTION_DAYS
-                if days_difference > RETENTION_DAYS:
-                    # delete it
-                    logger.info('Deleting %s. %s days old' %
-                                (snapshot, days_difference))
+                    # if we are past RETENTION_DAYS
+                    if days_difference > RETENTION_DAYS:
+                        # delete it
+                        logger.info('Deleting %s. %s days old' %
+                                    (snapshot, days_difference))
 
-                    try:
-                        client.delete_db_snapshot(
-                            DBSnapshotIdentifier=snapshot)
+                        try:
+                            client.delete_db_snapshot(
+                                DBSnapshotIdentifier=snapshot)
 
-                    except Exception as e:
-                        delete_pending += 1
-                        logger.info('Could not delete %s (%s)' % (snapshot, e))
+                        except Exception as e:
+                            delete_pending += 1
+                            logger.info('Could not delete %s (%s)' % (snapshot, e))
 
+                    else:
+                        logger.info('Not deleting %s. Only %s days old' %
+                                    (snapshot, days_difference))
                 else:
-                    logger.info('Not deleting %s. Only %s days old' %
-                                (snapshot, days_difference))
-
+                    logger.info('Not deleting %s. Is not a daily snapshot.' % (snapshot))
             else:
                 logger.info(
                     'Not deleting %s. Did not find correct tag' % snapshot)
